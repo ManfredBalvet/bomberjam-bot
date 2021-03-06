@@ -2,8 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class Command(ABC):
-    def send(self):
-        print(self, flush=True)
+    """
+    Base class for a command. All commands must implement their custom __str__ method to be able
+    to be sent to the game via stdout
+    """
 
     @abstractmethod
     def __str__(self) -> str:
@@ -11,7 +13,14 @@ class Command(ABC):
 
 
 class RegisterBotCommand(Command):
+    """
+    Command used to register your bot before starting a game.
+    """
+
     def __init__(self, name):
+        """
+        :param name: The name of your bot
+        """
         self.name = name
 
     def __str__(self):
@@ -19,7 +28,15 @@ class RegisterBotCommand(Command):
 
 
 class ActionCommand(Command):
+    """
+    Command used to send an Action during the game.
+    """
+
     def __init__(self, tick, action):
+        """
+        :param tick: The current game tick
+        :param action: The Action you want to do
+        """
         self.tick = tick
         self.action = action
 

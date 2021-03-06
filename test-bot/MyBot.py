@@ -1,30 +1,33 @@
-import random
+# A base game loop.
+# You shouldn't have to modify this file unless you have specific needs.
+# Your bot logic should be implemented in bot_logic/bot.
+# You can, however, do anything you'd like in here.
+# ==============================================================================
 
+from bot_logic.bot import get_bot_name
+from bot_logic.bot import get_action
 from core.commands import ActionCommand
 from core.commands import RegisterBotCommand
-from core.logging import configure_logging
+from core.logging import configure_file_logging
 from core.logging import log
-from models.action import Action
 from models.state import State
 
-BOT_NAME = "Guid"
 
-RegisterBotCommand(BOT_NAME).send()
+bot_name = get_bot_name()
+
+print(RegisterBotCommand(bot_name))
 bot_id = input()
 
-configure_logging(f"MyBot-{bot_id}")
-log(f"Bot name is '{BOT_NAME}' with id '{bot_id}'")
+configure_file_logging(f"MyBot-{bot_id}")
+log(f"Bot name is '{bot_name}' with id '{bot_id}'")
 
 while True:
     state = State(input(), bot_id)
-    log(state)
 
     try:
         tick = state.tick
-        my_bot = state.my_bot
-
-        random_action = random.choice(Action.all())
-        ActionCommand(tick, random_action).send()
+        action = get_action(state)
+        print(ActionCommand(tick, action))
     except Exception:
         # Handle your exceptions per tick
         pass
