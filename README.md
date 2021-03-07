@@ -48,13 +48,11 @@ bomberjam> scripts\run_game.bat starter myBot1
 ## Publishing your bot
 At the root level, you will find a script folder with `publish.bat`  
 This script takes the folder name of the bot you want to publish and will produce a copy of the folder, named `published/`, without the unnecessary folders like `logs/` and `venv/` (more on that later).  
-The folder will be created in the working directory.  
+The folder will be created in the working directory. Make sure you are not calling the script from inside the folder you're trying to copy.  
 All you have to do then is zip the folder and upload it to Bomberjam!
 
 Example usage:
 ```
-bomberjam\starter> ..\scripts\publish.bat starter
-or
 bomberjam> scripts\publish.bat starter
 ```
 
