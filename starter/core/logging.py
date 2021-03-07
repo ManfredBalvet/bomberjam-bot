@@ -1,6 +1,7 @@
 import argparse
 import logging
 from datetime import datetime
+from pathlib import Path
 
 LOGGING_ENABLED = False
 
@@ -16,6 +17,7 @@ def configure_file_logging(file_id):
 
     if __is_logging_enabled__():
         LOGGING_ENABLED = True
+        Path("./logs").mkdir(exist_ok=True)
         logging.basicConfig(filename=__get_logging_file_name__(file_id), level=logging.DEBUG)
 
 
