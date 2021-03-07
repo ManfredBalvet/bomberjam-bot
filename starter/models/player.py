@@ -25,7 +25,6 @@ class Player(JSONSerializable):
         """
         :param player_json: A player in json formatted dict
         """
-
         self.id = player_json["id"]
         self.name = player_json["name"]
         self.x = player_json["x"]

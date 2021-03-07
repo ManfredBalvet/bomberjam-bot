@@ -32,7 +32,6 @@ class State(JSONSerializable):
         :param state_string: A json string representing the state
         :param current_player_id: The id of the current player
         """
-
         json_state = json.loads(state_string)
 
         self.tick = json_state["tick"]
@@ -54,7 +53,6 @@ class State(JSONSerializable):
 
         :return: dict
         """
-
         dict_copy = self.__dict__.copy()
         dict_copy['tiles'] = dict_copy['tiles'].tolist()
 

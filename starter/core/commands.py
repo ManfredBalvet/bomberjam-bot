@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Command(ABC):
     """
     Base class for a command. All commands must implement their custom __str__ method to be able
-    to be sent to the game via stdout
+    to be sent to the game via stdout.
     """
 
     @abstractmethod

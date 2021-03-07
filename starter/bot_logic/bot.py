@@ -9,10 +9,21 @@ from models.action import Action
 
 
 def get_bot_name():
+    """
+    Gets your bot name.
+
+    :return: str
+    """
     return "Guid"
 
 
-def get_action(state):
+def compute_next_action(state):
+    """
+    Computes the next action your bot should do based on the current game state.
+
+    :param state: The current game state
+    :return: Action
+    """
     log(state)
     my_bot = state.my_bot
     log(state.tiles[my_bot.x, my_bot.y])
