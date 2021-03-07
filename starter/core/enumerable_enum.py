@@ -1,6 +1,6 @@
 class Enumerable:
     """
-    Base class for when you want an Enum class to be able to expose all of its possible values
+    Base class for when you want an Enum class to be able to expose all of its possible values.
     """
 
     @classmethod
@@ -16,7 +16,7 @@ class Enumerable:
 def is_private(key):
     """
     Returns whether or not an attribute is private.
-    A private attribute looks like: __private_attribute__
+    A private attribute looks like: __private_attribute__.
 
     :param key: The attribute key
     :return: bool

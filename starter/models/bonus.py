@@ -16,7 +16,6 @@ class Bonus(JSONSerializable):
         """
         :param bonus_json: A bonus in json formatted dict
         """
-
         self.kind = bonus_json["kind"]
         self.x = bonus_json["x"]
         self.y = bonus_json["y"]

@@ -17,7 +17,6 @@ class Bomb(JSONSerializable):
         """
         :param bomb_json: A bomb in json formatted dict
         """
-
         self.countdown = bomb_json["countdown"]
         self.player_id = bomb_json["playerId"]
         self.range = bomb_json["range"]

@@ -4,12 +4,12 @@ from abc import ABC
 
 class JSONSerializable(ABC):
     """
-    Base class for when you want an object to be serializable in a json format
+    Base class for when you want an object to be serializable in a json format.
     """
 
     def __str__(self):
         """
-        Returns the json string representation of the object
+        Returns the json string representation of the object.
 
         :return: str
         """
