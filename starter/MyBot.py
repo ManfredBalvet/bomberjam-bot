@@ -1,7 +1,9 @@
-# A base game loop.
+# You CANNOT rename this file.
+#
+# Contains the game loop.
 # You shouldn't have to modify this file unless you have specific needs.
 # Your bot logic should be implemented in bot_logic/bot.py.
-# You can, however, do anything you'd like in here.
+# You can, however, do anything you'd like.
 #
 # This script takes one optional argument: --logging
 # Example usage: python MyBot.py --logging=True
@@ -9,8 +11,7 @@
 
 import argparse
 
-from bot_logic.bot import get_bot_name
-from bot_logic.bot import compute_next_action
+from bot_logic.bot import Bot
 from core.commands import ActionCommand
 from core.commands import RegisterBotCommand
 from core.logging import configure_file_logging
@@ -37,10 +38,11 @@ def play():
 
     :return: None
     """
-    bot_name = get_bot_name()
+    bot_name = Bot.NAME
 
     print(RegisterBotCommand(bot_name))
     bot_id = input()
+    bot = Bot(bot_id)
 
     if is_logging_enabled():
         configure_file_logging(f"MyBot-{bot_id}")
@@ -51,7 +53,7 @@ def play():
     while not state.is_finished:
         try:
             tick = state.tick
-            action = compute_next_action(state)
+            action = bot.compute_next_action(state)
 
             print(ActionCommand(tick, action))
             state = State(input(), bot_id)

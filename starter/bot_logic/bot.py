@@ -1,31 +1,28 @@
-# Implement your bot logic here
-# If you remove get_bot_name or get_action, make sure to update MyBot.py
-# Otherwise, you can add anything you'd like
-# ==============================================================================
-
 import random
 from core.logging import log
 from models.action import Action
 
 
-def get_bot_name():
+class Bot:
     """
-    Gets your bot name.
-
-    :return: str
+    Your Bomberjam bot.
+    NAME and compute_next_action(state) are required and used by the game loop.
+    The rest is up to you!
     """
-    return "Guid"
+    NAME = "Guid"
 
+    def __init__(self, bot_id):
+        self.bot_id = bot_id
 
-def compute_next_action(state):
-    """
-    Computes the next action your bot should do based on the current game state.
+    def compute_next_action(self, state):
+        """
+        Computes the next action your bot should do based on the current game state.
 
-    :param state: The current game state
-    :return: Action
-    """
-    log(state)
-    my_bot = state.my_bot
-    log(state.tiles[my_bot.x, my_bot.y])
+        :param state: The current game state
+        :return: Action
+        """
+        log(state)
+        my_bot = state.my_bot
+        log(state.tiles[my_bot.x, my_bot.y])
 
-    return random.choice(Action.tolist())
+        return random.choice(Action.tolist())
