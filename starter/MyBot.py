@@ -47,15 +47,16 @@ def play():
 
     log(f"Bot name is '{bot_name}' with id '{bot_id}'")
 
-    while True:
+    state = State(input(), bot_id)
+    while not state.is_finished:
         try:
-            state = State(input(), bot_id)
             tick = state.tick
             action = compute_next_action(state)
 
             print(ActionCommand(tick, action))
-        except Exception:
-            pass
+            state = State(input(), bot_id)
+        except Exception as error:
+            log(error)
 
 
 play()
