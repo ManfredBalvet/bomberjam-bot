@@ -84,12 +84,15 @@ class Bot:
         max_score = np.amax(score_matrix)
         shortest_path = np.amax(distance_matrix)
         best_destination = None
-        for column in range(0, state.width):
-            for line in range(0, state.height):
-                if score_matrix[column, line] == max_score:
-                    if distance_matrix[column, line] < shortest_path:
-                        shortest_path = distance_matrix[column, line]
-                        best_destination = (column, line)
+        if max_score == 0:
+            best_destination = (state.width // 2, state.height // 2)
+        else:
+            for column in range(0, state.width):
+                for line in range(0, state.height):
+                    if score_matrix[column, line] == max_score:
+                        if distance_matrix[column, line] < shortest_path:
+                            shortest_path = distance_matrix[column, line]
+                            best_destination = (column, line)
 
         minimum_distance = distance_matrix[best_destination]
 
@@ -114,9 +117,7 @@ class Bot:
         possible_destinations.sort()
         log(f"{possible_destinations};\n {best_destination}; {np.max(score_matrix, axis=None)}; {minimum_distance}")
 
-        if max_score == 0:
-            return Action.STAY
-        elif tuple(np.subtract(position, current_location)) == (0, -1):
+        if tuple(np.subtract(position, current_location)) == (0, -1):
             return Action.UP
         elif tuple(np.subtract(position, current_location)) == (0, 1):
             return Action.DOWN
@@ -125,4 +126,7 @@ class Bot:
         elif tuple(np.subtract(position, current_location)) == (1, 0):
             return Action.RIGHT
         elif tuple(np.subtract(position, current_location)) == (0, 0):
-            return Action.BOMB
+            if max_score == 0:
+                return Action.STAY
+            else:
+                return Action.BOMB
