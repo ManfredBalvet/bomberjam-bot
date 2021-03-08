@@ -36,7 +36,7 @@ class Bot:
 
         while len(destination_to_explore) > 0:
             (x, y) = destination_to_explore.pop()
-            score = 0
+            broken_block = 0
             for direction in directions:
                 for sight in range(1, my_bot.bomb_range + 1):
                     target = None
@@ -53,14 +53,12 @@ class Bot:
                         if state.tiles[target] == Tile.EMPTY or state.tiles[target] == Tile.EXPLOSION:
                             continue
                         elif state.tiles[target] == Tile.BLOCK:
-                            score += 1
+                            broken_block += 1
                             break
                         else:
                             break
                     else:
                         break
-
-            score_matrix[x, y] = score
 
             for direction in directions:
                 destination = None
@@ -81,7 +79,18 @@ class Bot:
                             destination_to_explore.append(destination)
                             distance_matrix[destination] = distance_matrix[x, y] + 1
 
-        best_destination = np.unravel_index(np.argmax(score_matrix, axis=None), score_matrix.shape)
+            score_matrix[x, y] = broken_block
+
+        max_score = np.amax(score_matrix)
+        shortest_path = np.amax(distance_matrix)
+        best_destination = None
+        for column in range(0, state.width):
+            for line in range(0, state.height):
+                if score_matrix[column, line] == max_score:
+                    if distance_matrix[column, line] < shortest_path:
+                        shortest_path = distance_matrix[column, line]
+                        best_destination = (column, line)
+
         minimum_distance = distance_matrix[best_destination]
 
         position = best_destination
@@ -105,7 +114,9 @@ class Bot:
         possible_destinations.sort()
         log(f"{possible_destinations};\n {best_destination}; {np.max(score_matrix, axis=None)}; {minimum_distance}")
 
-        if tuple(np.subtract(position, current_location)) == (0, -1):
+        if max_score == 0:
+            return Action.STAY
+        elif tuple(np.subtract(position, current_location)) == (0, -1):
             return Action.UP
         elif tuple(np.subtract(position, current_location)) == (0, 1):
             return Action.DOWN
