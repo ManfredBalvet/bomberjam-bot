@@ -54,11 +54,13 @@ def play():
         try:
             tick = state.tick
             action = bot.compute_next_action(state)
+            log(action)
 
             print(ActionCommand(tick, action))
             state = State(input(), bot_id)
         except Exception as error:
             log(error)
+            break
 
 
 play()
