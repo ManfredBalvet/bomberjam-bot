@@ -120,9 +120,11 @@ def get_closest_safe_position(current_location, directions, bombs, state):
             return next_position_to_go
     log(distance_matrix.transpose())
 
+
 def get_shortest_path(origin, destination, state):
     # TODO: Do this
     return None
+
 
 class Bot:
     """
