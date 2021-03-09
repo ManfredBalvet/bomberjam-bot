@@ -20,5 +20,5 @@ class Bomb(JSONSerializable):
         self.countdown = bomb_json["countdown"]
         self.player_id = bomb_json["playerId"]
         self.range = bomb_json["range"]
-        self.x = bomb_json["x"]
-        self.y = bomb_json["y"]
+        self.position = (bomb_json["x"], bomb_json["y"])
+

@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import queue
 from core.logging import log
 from models.action import Action
 from models.tile import Tile
@@ -9,7 +10,7 @@ def in_bound(position, state):
     return 0 <= position[0] < state.width and 0 <= position[1] < state.height
 
 
-def get_position_in_direction(position, direction, distance):
+def get_position_in_direction(position, direction, distance=1):
     (x, y) = position
     if direction == Action.UP:
         return x, y - distance
@@ -68,6 +69,61 @@ def get_closest_best_position_to_drop_a_bomb(score_matrix, distance_matrix, stat
     return best_position_to_drop_a_bomb
 
 
+def is_in_danger(bomb, directions, state, destination):
+    for direction in directions:
+        for sight in range(0, bomb.range + 1):
+            bomb_target = get_position_in_direction(bomb.position, direction, sight)
+
+            if in_bound(bomb_target, state):
+                if state.tiles[bomb_target] == Tile.WALL:
+                    break
+                elif bomb_target == destination:
+                    return True
+            else:
+                break
+    return False
+
+
+def get_closest_safe_position(current_location, directions, bombs, state):
+    possible_safe_destinations = queue.Queue()
+    possible_safe_destinations.put(current_location)
+    distance_matrix = np.full((state.width, state.height), state.width * state.height)
+    distance_matrix[current_location] = 0
+    while not possible_safe_destinations.empty():
+        safe = True
+        possible_safe_destination = possible_safe_destinations.get()
+        for bomb in bombs:
+            if is_in_danger(bomb, directions, state, possible_safe_destination):
+                safe = False
+                for direction in directions:
+                    next_possible_safe_destination = get_position_in_direction(possible_safe_destination, direction)
+
+                    if in_bound(next_possible_safe_destination, state):
+                        if state.tiles[next_possible_safe_destination] == Tile.EMPTY or state.tiles[next_possible_safe_destination] == Tile.EXPLOSION:
+                            if distance_matrix[next_possible_safe_destination] > distance_matrix[possible_safe_destination] + 1:
+                                distance_matrix[next_possible_safe_destination] = distance_matrix[possible_safe_destination] + 1
+                                possible_safe_destinations.put(next_possible_safe_destination)
+
+                break
+        if safe:
+            next_position_to_go = possible_safe_destination
+            while distance_matrix[next_position_to_go] > 1:
+                best_neighbor = next_position_to_go
+                for direction in directions:
+                    next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction)
+
+                    if in_bound(next_position_in_shortest_path, state):
+                        if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
+                            best_neighbor = next_position_in_shortest_path
+
+                next_position_to_go = best_neighbor
+            return next_position_to_go
+    log(distance_matrix.transpose())
+
+def get_shortest_path(origin, destination, state):
+    # TODO: Do this
+    return None
+
 class Bot:
     """
     Your Bomberjam bot.
@@ -101,7 +157,7 @@ class Bot:
             destination_to_explore = destinations_to_explore.pop()
 
             for direction in directions:
-                next_destination_to_explore = get_position_in_direction(destination_to_explore, direction, 1)
+                next_destination_to_explore = get_position_in_direction(destination_to_explore, direction)
 
                 if in_bound(next_destination_to_explore, state):
                     if state.tiles[next_destination_to_explore] == Tile.EMPTY or state.tiles[next_destination_to_explore] == Tile.EXPLOSION:
@@ -124,7 +180,7 @@ class Bot:
         while distance_matrix[next_position_to_go] > 1:
             best_neighbor = next_position_to_go
             for direction in directions:
-                next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction, 1)
+                next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction)
 
                 if in_bound(next_position_in_shortest_path, state):
                     if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
@@ -146,6 +202,16 @@ class Bot:
 
         action = get_direction_relative_to_position(current_location, next_position_to_go)
         if action == Action.STAY and max_score != 0:
-            return Action.BOMB
+            action = Action.BOMB
+
+        for bomb in state.bombs:
+            if is_in_danger(bomb, directions, state, next_position_to_go):
+                log("I'M IN DANGER")
+                next_position_to_go = get_closest_safe_position(current_location, directions, state.bombs, state)
+                log(next_position_to_go)
+                if next_position_to_go:
+                    action = get_direction_relative_to_position(current_location, next_position_to_go)
+                else:
+                    break
 
         return action
