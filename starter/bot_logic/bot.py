@@ -5,6 +5,35 @@ from models.action import Action
 from models.tile import Tile
 
 
+def in_bound(position, state):
+    return 0 <= position[0] < state.width and 0 <= position[1] < state.height
+
+
+def get_position_in_direction(position, direction, distance):
+    (x, y) = position
+    if direction == Action.UP:
+        return x, y - distance
+    elif direction == Action.DOWN:
+        return x, y + distance
+    elif direction == Action.LEFT:
+        return x - distance, y
+    elif direction == Action.RIGHT:
+        return x + distance, y
+
+
+def get_direction_relative_to_position(origin, destination):
+    if tuple(np.subtract(destination, origin)) == (0, -1):
+        return Action.UP
+    elif tuple(np.subtract(destination, origin)) == (0, 1):
+        return Action.DOWN
+    elif tuple(np.subtract(destination, origin)) == (-1, 0):
+        return Action.LEFT
+    elif tuple(np.subtract(destination, origin)) == (1, 0):
+        return Action.RIGHT
+    elif tuple(np.subtract(destination, origin)) == (0, 0):
+        return Action.STAY
+
+
 class Bot:
     """
     Your Bomberjam bot.
@@ -31,28 +60,20 @@ class Bot:
         directions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]
         possible_destinations = []
         current_location = (my_bot.x, my_bot.y)
-        destination_to_explore = [current_location]
+        destinations_to_explore = [current_location]
         distance_matrix[current_location] = 0
 
-        while len(destination_to_explore) > 0:
-            (x, y) = destination_to_explore.pop()
+        while len(destinations_to_explore) > 0:
+            destination_to_explore = destinations_to_explore.pop()
             broken_block = 0
             for direction in directions:
                 for sight in range(1, my_bot.bomb_range + 1):
-                    target = None
-                    if direction == Action.UP:
-                        target = (x, y - sight)
-                    elif direction == Action.DOWN:
-                        target = (x, y + sight)
-                    elif direction == Action.LEFT:
-                        target = (x - sight, y)
-                    elif direction == Action.RIGHT:
-                        target = (x + sight, y)
+                    bomb_target = get_position_in_direction(destination_to_explore, direction, sight)
 
-                    if 0 <= target[0] < state.width and 0 <= target[1] < state.height:
-                        if state.tiles[target] == Tile.EMPTY or state.tiles[target] == Tile.EXPLOSION:
+                    if in_bound(bomb_target, state):
+                        if state.tiles[bomb_target] == Tile.EMPTY or state.tiles[bomb_target] == Tile.EXPLOSION:
                             continue
-                        elif state.tiles[target] == Tile.BLOCK:
+                        elif state.tiles[bomb_target] == Tile.BLOCK:
                             broken_block += 1
                             break
                         else:
@@ -61,72 +82,60 @@ class Bot:
                         break
 
             for direction in directions:
-                destination = None
-                if direction == Action.UP:
-                    destination = (x, y - 1)
-                elif direction == Action.DOWN:
-                    destination = (x, y + 1)
-                elif direction == Action.LEFT:
-                    destination = (x - 1, y)
-                elif direction == Action.RIGHT:
-                    destination = (x + 1, y)
+                next_destination_to_explore = get_position_in_direction(destination_to_explore, direction, 1)
 
-                if 0 <= destination[0] < state.width and 0 <= destination[1] < state.height:
-                    if state.tiles[destination] == Tile.EMPTY or state.tiles[destination] == Tile.EXPLOSION:
-                        if destination not in possible_destinations:
-                            possible_destinations.append(destination)
-                        if distance_matrix[destination] > distance_matrix[x, y] + 1:
-                            destination_to_explore.append(destination)
-                            distance_matrix[destination] = distance_matrix[x, y] + 1
+                if in_bound(next_destination_to_explore, state):
+                    if state.tiles[next_destination_to_explore] == Tile.EMPTY or state.tiles[next_destination_to_explore] == Tile.EXPLOSION:
+                        if next_destination_to_explore not in possible_destinations:
+                            possible_destinations.append(next_destination_to_explore)
 
-            score_matrix[x, y] = broken_block
+                        if distance_matrix[next_destination_to_explore] > distance_matrix[destination_to_explore] + 1:
+                            destinations_to_explore.append(next_destination_to_explore)
+                            distance_matrix[next_destination_to_explore] = distance_matrix[destination_to_explore] + 1
+
+            score_matrix[destination_to_explore] = broken_block
 
         max_score = np.amax(score_matrix)
         shortest_path = np.amax(distance_matrix)
-        best_destination = None
+        best_position_to_drop_a_bomb = None
         if max_score == 0:
-            best_destination = (state.width // 2, state.height // 2)
+            best_position_to_drop_a_bomb = (state.width // 2, state.height // 2)
         else:
             for column in range(0, state.width):
                 for line in range(0, state.height):
                     if score_matrix[column, line] == max_score:
                         if distance_matrix[column, line] < shortest_path:
                             shortest_path = distance_matrix[column, line]
-                            best_destination = (column, line)
+                            best_position_to_drop_a_bomb = (column, line)
 
-        minimum_distance = distance_matrix[best_destination]
+        minimum_distance = distance_matrix[best_position_to_drop_a_bomb]
 
-        position = best_destination
-        while distance_matrix[position] > 1:
-            (x, y) = position
+        next_position_to_go = best_position_to_drop_a_bomb
+        while distance_matrix[next_position_to_go] > 1:
+            best_neighbor = next_position_to_go
             for direction in directions:
-                destination = None
-                if direction == Action.UP:
-                    destination = (x, y - 1)
-                elif direction == Action.DOWN:
-                    destination = (x, y + 1)
-                elif direction == Action.LEFT:
-                    destination = (x - 1, y)
-                elif direction == Action.RIGHT:
-                    destination = (x + 1, y)
+                next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction, 1)
 
-                if 0 <= destination[0] < state.width and 0 <= destination[1] < state.height:
-                    if distance_matrix[destination] < distance_matrix[position]:
-                        position = destination
+                if in_bound(next_position_in_shortest_path, state):
+                    if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
+                        best_neighbor = next_position_in_shortest_path
+
+            next_position_to_go = best_neighbor
 
         possible_destinations.sort()
-        log(f"{possible_destinations};\n {best_destination}; {np.max(score_matrix, axis=None)}; {minimum_distance}")
+        log(f"Tick: {state.tick};\n"
+            f"Possible destinations: {possible_destinations};\n"
+            f"Best position to drop a bomb: {best_position_to_drop_a_bomb};\n"
+            f"Max amount of breakable block: {np.max(score_matrix, axis=None)};\n"
+            f"Min distance: {minimum_distance};\n"
+            f"Current location: {current_location};\n"
+            f"Next position to go to: {next_position_to_go};\n"
+            f"{distance_matrix.transpose()}\n"
+            f"{score_matrix.transpose()}"
+            )
 
-        if tuple(np.subtract(position, current_location)) == (0, -1):
-            return Action.UP
-        elif tuple(np.subtract(position, current_location)) == (0, 1):
-            return Action.DOWN
-        elif tuple(np.subtract(position, current_location)) == (-1, 0):
-            return Action.LEFT
-        elif tuple(np.subtract(position, current_location)) == (1, 0):
-            return Action.RIGHT
-        elif tuple(np.subtract(position, current_location)) == (0, 0):
-            if max_score == 0:
-                return Action.STAY
-            else:
-                return Action.BOMB
+        action = get_direction_relative_to_position(current_location, next_position_to_go)
+        if action == Action.STAY and max_score != 0:
+            return Action.BOMB
+
+        return action
