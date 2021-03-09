@@ -22,16 +22,50 @@ def get_position_in_direction(position, direction, distance):
 
 
 def get_direction_relative_to_position(origin, destination):
-    if tuple(np.subtract(destination, origin)) == (0, -1):
+    direction_vector = tuple(np.subtract(destination, origin))
+    if direction_vector == (0, -1):
         return Action.UP
-    elif tuple(np.subtract(destination, origin)) == (0, 1):
+    elif direction_vector == (0, 1):
         return Action.DOWN
-    elif tuple(np.subtract(destination, origin)) == (-1, 0):
+    elif direction_vector == (-1, 0):
         return Action.LEFT
-    elif tuple(np.subtract(destination, origin)) == (1, 0):
+    elif direction_vector == (1, 0):
         return Action.RIGHT
-    elif tuple(np.subtract(destination, origin)) == (0, 0):
+    elif direction_vector == (0, 0):
         return Action.STAY
+
+
+def get_nbr_of_breakable_block(destination_to_explore, directions, bomb_range, state):
+    broken_block = 0
+    for direction in directions:
+        for sight in range(1, bomb_range + 1):
+            bomb_target = get_position_in_direction(destination_to_explore, direction, sight)
+
+            if in_bound(bomb_target, state):
+                if state.tiles[bomb_target] == Tile.EMPTY or state.tiles[bomb_target] == Tile.EXPLOSION:
+                    continue
+                elif state.tiles[bomb_target] == Tile.BLOCK:
+                    broken_block += 1
+                    break
+                else:
+                    break
+            else:
+                break
+
+    return broken_block
+
+
+def get_closest_best_position_to_drop_a_bomb(score_matrix, distance_matrix, state):
+    best_position_to_drop_a_bomb = None
+    max_score = np.amax(score_matrix)
+    shortest_path = np.amax(distance_matrix)
+    for column in range(0, state.width):
+        for line in range(0, state.height):
+            if score_matrix[column, line] == max_score:
+                if distance_matrix[column, line] < shortest_path:
+                    shortest_path = distance_matrix[column, line]
+                    best_position_to_drop_a_bomb = (column, line)
+    return best_position_to_drop_a_bomb
 
 
 class Bot:
@@ -65,21 +99,6 @@ class Bot:
 
         while len(destinations_to_explore) > 0:
             destination_to_explore = destinations_to_explore.pop()
-            broken_block = 0
-            for direction in directions:
-                for sight in range(1, my_bot.bomb_range + 1):
-                    bomb_target = get_position_in_direction(destination_to_explore, direction, sight)
-
-                    if in_bound(bomb_target, state):
-                        if state.tiles[bomb_target] == Tile.EMPTY or state.tiles[bomb_target] == Tile.EXPLOSION:
-                            continue
-                        elif state.tiles[bomb_target] == Tile.BLOCK:
-                            broken_block += 1
-                            break
-                        else:
-                            break
-                    else:
-                        break
 
             for direction in directions:
                 next_destination_to_explore = get_position_in_direction(destination_to_explore, direction, 1)
@@ -93,22 +112,13 @@ class Bot:
                             destinations_to_explore.append(next_destination_to_explore)
                             distance_matrix[next_destination_to_explore] = distance_matrix[destination_to_explore] + 1
 
-            score_matrix[destination_to_explore] = broken_block
+            score_matrix[destination_to_explore] = get_nbr_of_breakable_block(destination_to_explore, directions, my_bot.bomb_range, state)
 
         max_score = np.amax(score_matrix)
-        shortest_path = np.amax(distance_matrix)
-        best_position_to_drop_a_bomb = None
         if max_score == 0:
             best_position_to_drop_a_bomb = (state.width // 2, state.height // 2)
         else:
-            for column in range(0, state.width):
-                for line in range(0, state.height):
-                    if score_matrix[column, line] == max_score:
-                        if distance_matrix[column, line] < shortest_path:
-                            shortest_path = distance_matrix[column, line]
-                            best_position_to_drop_a_bomb = (column, line)
-
-        minimum_distance = distance_matrix[best_position_to_drop_a_bomb]
+            best_position_to_drop_a_bomb = get_closest_best_position_to_drop_a_bomb(score_matrix, distance_matrix, state)
 
         next_position_to_go = best_position_to_drop_a_bomb
         while distance_matrix[next_position_to_go] > 1:
@@ -127,7 +137,7 @@ class Bot:
             f"Possible destinations: {possible_destinations};\n"
             f"Best position to drop a bomb: {best_position_to_drop_a_bomb};\n"
             f"Max amount of breakable block: {np.max(score_matrix, axis=None)};\n"
-            f"Min distance: {minimum_distance};\n"
+            f"Min distance: {distance_matrix[best_position_to_drop_a_bomb]};\n"
             f"Current location: {current_location};\n"
             f"Next position to go to: {next_position_to_go};\n"
             f"{distance_matrix.transpose()}\n"
