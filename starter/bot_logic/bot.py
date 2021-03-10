@@ -121,12 +121,53 @@ def get_closest_safe_position(current_location, directions, bombs, state):
     log(distance_matrix.transpose())
 
 
-def get_shortest_path(origin, destination, state):
-    # TODO: Do this
-    return None
+def get_shortest_path(destination, distance_matrix, directions, state):
+    shortest_path = [destination]
+    next_position_to_go = destination
+    while distance_matrix[next_position_to_go] > 1:
+        best_neighbor = next_position_to_go
+        for direction in directions:
+            next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction)
+
+            if in_bound(next_position_in_shortest_path, state):
+                if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
+                    best_neighbor = next_position_in_shortest_path
+        next_position_to_go = best_neighbor
+
+        shortest_path.insert(0, best_neighbor)
+
+    return shortest_path
+
+
+def get_score_and_distance_matrix(current_location, state, directions, my_bot):
+    score_matrix = np.zeros((state.width, state.height))
+    distance_matrix = np.full((state.width, state.height), state.width * state.height)
+    possible_destinations = []
+    destinations_to_explore = [current_location]
+    distance_matrix[current_location] = 0
+
+    while len(destinations_to_explore) > 0:
+        destination_to_explore = destinations_to_explore.pop()
+
+        for direction in directions:
+            next_destination_to_explore = get_position_in_direction(destination_to_explore, direction)
+
+            if in_bound(next_destination_to_explore, state):
+                if state.tiles[next_destination_to_explore] == Tile.EMPTY or state.tiles[next_destination_to_explore] == Tile.EXPLOSION:
+                    if next_destination_to_explore not in possible_destinations:
+                        possible_destinations.append(next_destination_to_explore)
+
+                    if distance_matrix[next_destination_to_explore] > distance_matrix[destination_to_explore] + 1:
+                        destinations_to_explore.append(next_destination_to_explore)
+                        distance_matrix[next_destination_to_explore] = distance_matrix[destination_to_explore] + 1
+
+        score_matrix[destination_to_explore] = get_nbr_of_breakable_block(destination_to_explore, directions, my_bot.bomb_range, state)
+
+    return score_matrix, distance_matrix, possible_destinations
 
 
 class Bot:
+
     """
     Your Bomberjam bot.
     NAME and compute_next_action(state) are required and used by the game loop.
@@ -146,31 +187,10 @@ class Bot:
         """
 
         my_bot = state.my_bot
-
-        score_matrix = np.zeros((state.width, state.height))
-        distance_matrix = np.full((state.width, state.height), state.width * state.height)
         directions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]
-        possible_destinations = []
         current_location = (my_bot.x, my_bot.y)
-        destinations_to_explore = [current_location]
-        distance_matrix[current_location] = 0
 
-        while len(destinations_to_explore) > 0:
-            destination_to_explore = destinations_to_explore.pop()
-
-            for direction in directions:
-                next_destination_to_explore = get_position_in_direction(destination_to_explore, direction)
-
-                if in_bound(next_destination_to_explore, state):
-                    if state.tiles[next_destination_to_explore] == Tile.EMPTY or state.tiles[next_destination_to_explore] == Tile.EXPLOSION:
-                        if next_destination_to_explore not in possible_destinations:
-                            possible_destinations.append(next_destination_to_explore)
-
-                        if distance_matrix[next_destination_to_explore] > distance_matrix[destination_to_explore] + 1:
-                            destinations_to_explore.append(next_destination_to_explore)
-                            distance_matrix[next_destination_to_explore] = distance_matrix[destination_to_explore] + 1
-
-            score_matrix[destination_to_explore] = get_nbr_of_breakable_block(destination_to_explore, directions, my_bot.bomb_range, state)
+        score_matrix, distance_matrix, possible_destinations = get_score_and_distance_matrix(current_location, state, directions, my_bot)
 
         max_score = np.amax(score_matrix)
         if max_score == 0:
@@ -178,33 +198,23 @@ class Bot:
         else:
             best_position_to_drop_a_bomb = get_closest_best_position_to_drop_a_bomb(score_matrix, distance_matrix, state)
 
-        next_position_to_go = best_position_to_drop_a_bomb
-        while distance_matrix[next_position_to_go] > 1:
-            best_neighbor = next_position_to_go
-            for direction in directions:
-                next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction)
-
-                if in_bound(next_position_in_shortest_path, state):
-                    if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
-                        best_neighbor = next_position_in_shortest_path
-
-            next_position_to_go = best_neighbor
+        shortest_path = get_shortest_path(best_position_to_drop_a_bomb, distance_matrix, directions, state)
+        next_position_to_go = shortest_path[0]
 
         possible_destinations.sort()
         log(f"Tick: {state.tick};\n"
             f"Possible destinations: {possible_destinations};\n"
+            f"Max Score: {max_score}\n"
             f"Best position to drop a bomb: {best_position_to_drop_a_bomb};\n"
             f"Max amount of breakable block: {np.max(score_matrix, axis=None)};\n"
             f"Min distance: {distance_matrix[best_position_to_drop_a_bomb]};\n"
             f"Current location: {current_location};\n"
-            f"Next position to go to: {next_position_to_go};\n"
+            f"Next position to go to: {shortest_path};\n"
             f"{distance_matrix.transpose()}\n"
             f"{score_matrix.transpose()}"
             )
 
         action = get_direction_relative_to_position(current_location, next_position_to_go)
-        if action == Action.STAY and max_score != 0:
-            action = Action.BOMB
 
         for bomb in state.bombs:
             if is_in_danger(bomb, directions, state, next_position_to_go):
@@ -216,4 +226,6 @@ class Bot:
                 else:
                     break
 
+        if action == Action.STAY and current_location == best_position_to_drop_a_bomb:
+            action = Action.BOMB
         return action
