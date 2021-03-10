@@ -188,6 +188,7 @@ class Bot:
 
         my_bot = state.my_bot
         directions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]
+        random.shuffle(directions)
         current_location = (my_bot.x, my_bot.y)
 
         score_matrix, distance_matrix, possible_destinations = get_score_and_distance_matrix(current_location, state, directions, my_bot)
