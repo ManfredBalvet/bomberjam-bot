@@ -56,6 +56,27 @@ def get_nbr_of_breakable_block(destination_to_explore, directions, bomb_range, s
     return broken_block
 
 
+# def get_nbr_of_killable_bots(destination_to_explore, directions, bomb_range, state):
+    # TODO: Do this
+    # broken_block = 0
+    # for direction in directions:
+    #     for sight in range(1, bomb_range + 1):
+    #         bomb_target = get_position_in_direction(destination_to_explore, direction, sight)
+    #
+    #         if in_bound(bomb_target, state):
+    #             if state.tiles[bomb_target] == Tile.EMPTY or state.tiles[bomb_target] == Tile.EXPLOSION:
+    #                 continue
+    #             elif state.tiles[bomb_target] == Tile.BLOCK:
+    #                 broken_block += 1
+    #                 break
+    #             else:
+    #                 break
+    #         else:
+    #             break
+    #
+    # return broken_block
+
+
 def get_closest_best_position_to_drop_a_bomb(score_matrix, distance_matrix, state):
     best_position_to_drop_a_bomb = None
     max_score = np.amax(score_matrix)
@@ -106,19 +127,8 @@ def get_closest_safe_position(current_location, directions, bombs, state):
 
                 break
         if safe:
-            next_position_to_go = possible_safe_destination
-            while distance_matrix[next_position_to_go] > 1:
-                best_neighbor = next_position_to_go
-                for direction in directions:
-                    next_position_in_shortest_path = get_position_in_direction(next_position_to_go, direction)
-
-                    if in_bound(next_position_in_shortest_path, state):
-                        if distance_matrix[next_position_in_shortest_path] < distance_matrix[best_neighbor]:
-                            best_neighbor = next_position_in_shortest_path
-
-                next_position_to_go = best_neighbor
-            return next_position_to_go
-    log(distance_matrix.transpose())
+            shortest_path = get_shortest_path(possible_safe_destination, distance_matrix, directions, state)
+            return shortest_path[0]
 
 
 def get_shortest_path(destination, distance_matrix, directions, state):
@@ -134,8 +144,8 @@ def get_shortest_path(destination, distance_matrix, directions, state):
                     best_neighbor = next_position_in_shortest_path
         next_position_to_go = best_neighbor
 
-        shortest_path.insert(0, best_neighbor)
-
+        shortest_path.append(best_neighbor)
+    shortest_path.reverse()
     return shortest_path
 
 
@@ -187,6 +197,11 @@ class Bot:
         """
 
         my_bot = state.my_bot
+        bots = state.players
+        for bot in bots:
+            if bot.id == my_bot.id:
+                bots.remove(bot)
+                break
         directions = [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]
         random.shuffle(directions)
         current_location = (my_bot.x, my_bot.y)
@@ -203,17 +218,17 @@ class Bot:
         next_position_to_go = shortest_path[0]
 
         possible_destinations.sort()
-        log(f"Tick: {state.tick};\n"
-            f"Possible destinations: {possible_destinations};\n"
-            f"Max Score: {max_score}\n"
-            f"Best position to drop a bomb: {best_position_to_drop_a_bomb};\n"
-            f"Max amount of breakable block: {np.max(score_matrix, axis=None)};\n"
-            f"Min distance: {distance_matrix[best_position_to_drop_a_bomb]};\n"
-            f"Current location: {current_location};\n"
-            f"Next position to go to: {shortest_path};\n"
-            f"{distance_matrix.transpose()}\n"
-            f"{score_matrix.transpose()}"
-            )
+        # log(f"Tick: {state.tick};\n"
+        #     f"Possible destinations: {possible_destinations};\n"
+        #     f"Max Score: {max_score}\n"
+        #     f"Best position to drop a bomb: {best_position_to_drop_a_bomb};\n"
+        #     f"Max amount of breakable block: {np.max(score_matrix, axis=None)};\n"
+        #     f"Min distance: {distance_matrix[best_position_to_drop_a_bomb]};\n"
+        #     f"Current location: {current_location};\n"
+        #     f"Next position to go to: {shortest_path};\n"
+        #     f"{distance_matrix.transpose()}\n"
+        #     f"{score_matrix.transpose()}"
+        #     )
 
         action = get_direction_relative_to_position(current_location, next_position_to_go)
 
