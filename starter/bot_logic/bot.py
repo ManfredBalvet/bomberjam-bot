@@ -244,4 +244,9 @@ class Bot:
 
         if action == Action.STAY and current_location == best_position_to_drop_a_bomb:
             action = Action.BOMB
+
+        for bot in bots:
+            bot_position = (bot.x, bot.y)
+            if next_position_to_go == bot_position:
+                action = Action.BOMB
         return action
